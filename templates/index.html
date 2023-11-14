@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <h1>Event Database Search</h1>
+  <style>
+      /* Base styles */
+      body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0;
+          padding: 0;
+          background-color: #eaeaea;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+      }
+
+      h1 {
+          color: #000000;
+          text-align: center;
+          font-size: 48px;
+          text-shadow: 4px 4px 6px #D3D3D3;
+          font-weight: bold;
+          margin: 20px 0;
+      }
+
+      /* Container for the search fields and buttons */
+      .search-container {
+          background-color: #fff;
+          padding: 2rem;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+          margin: 1rem;
+          width: calc(100% - 2rem);
+          max-width: 600px; /* Adjusted for a better layout on larger screens */
+      }
+
+      /* Style for each search input group */
+      .search-group {
+          margin-bottom: 1rem;
+      }
+
+      .search-input,
+      .search-btn {
+          width: 100%; /* Full width */
+          padding: 0.5rem;
+          margin-bottom: 0.5rem; /* Space between input and button */
+      }
+
+      .search-input {
+          border: 1px solid #ccc;
+          border-radius: 4px;
+      }
+
+      .search-btn {
+          background-color: #0056b3;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          text-transform: uppercase;
+      }
+
+      .search-btn:hover {
+          background-color: #004494;
+      }
+
+      /* Flex container for the time inputs */
+      .time-inputs {
+          display: flex;
+          gap: 10px; /* Creates space between elements */
+      }
+
+      .time-input {
+          flex: 1; /* Make each input take up equal space */
+      }
+
+      /* Style for the Get Events button */
+      .get-events-btn {
+          width: 100%;
+          margin-top: 10px;
+      }
+
+      /* Style for error message */
+      .error-message {
+          color: red;
+      }
+
+      /* Data table styles */
+      .data-container {
+          width: 100%; /* Ensures container width is responsive */
+          overflow-x: auto; /* Allows for horizontal scrolling on small screens */
+          margin-top: 20px; /* Adds space above the table */
+      }
+
+      .data-container table {
+          width: 100%;
+          border-collapse: collapse;
+          background: #fff;
+      }
+
+      .data-container th,
+      .data-container td {
+          padding: 10px 15px;
+          text-align: left;
+          border-bottom: 1px solid #ddd;
+      }
+
+      .data-container th {
+          background-color: #D3D3D3;
+          color: #333;
+          font-weight: bold;
+      }
+
+      .data-container tbody tr:hover {
+          background-color: #f1f1f1;
+      }
+
+      /* Responsive adjustments */
+      @media screen and (max-width: 768px) {
+          .search-container,
+          .data-container table th,
+          .data-container table td {
+              padding: 5px;
+          }
+
+          .search-group {
+              flex-direction: column;
+          }
+
+          .search-input,
+          .search-btn,
+          .time-input {
+              margin-right: 0;
+          }
+      }
+  </style>
+</head>
+
+<body>
+    <img src="{{ url_for('static', filename='grimace.png') }}">
+
+    <script>
+        function setFormAction(actionPath) {
+            document.getElementById("searchForm").action = actionPath;
+        }
+ 
+    </script>
+    <div class="search-container">
+      <form id="personSearchForm" action="/search/person" method="post" class="search-group">
+          <input type="text" class="search-input" placeholder="Enter Person ID" name="personSearch">
+          <button type="submit" class="search-btn">Search by Person ID</button>
+      </form>
+      
+      <form id="linkSearchForm" action="/search/link" method="post" class="search-group">
+          <input type="text" class="search-input" placeholder="Enter Link ID" name="linkSearch">
+          <button type="submit" class="search-btn">Search by Link ID</button>
+      </form>
+  
+      <!-- This is the form for event search -->
+      <form id="eventSearchForm" action="/all/events" method="post" class="event-search-container">
+          <!-- New div for flexbox alignment -->
+          <div class="time-inputs">
+              <input type="number" step="0.1" id="start_time" name="start_time" class="search-input time-input" placeholder="Start Time" min="0" max="999999.9">
+              <input type="number" step="0.1" id="end_time" name="end_time" class="search-input time-input" placeholder="End Time" min="0" max="999999.9">
+          </div>
+          <!-- Button below the time inputs -->
+          <input type="submit" value="Get Events" class="search-btn get-events-btn">
+          <!-- Error message display -->
+          {% if error_message %}
+              <p class="error-message">{{ error_message }}</p>
+          {% endif %}
+      </form>                                  
+  </div>
+               
+<!-- Display data section -->
+{% if person_data %}
+<div class="data-container">
+    <h2> Person ID Information </h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Person ID</th> <!-- DataType=string -->
+                <th>Event Type</th> <!-- DataType=string -->
+                <th>Link ID</th> <!-- DataType=string -->
+                <th>Act Type</th> <!-- DataType=string -->
+                <th>Leg Mode</th> <!-- DataType=string -->
+                <th>Timestamp</th> <!-- DataType=datetime -->
+                <th>From Node</th> <!-- DataType=float -->
+                <th>To Node</th> <!-- DataType=float -->
+                <th>Length</th> <!-- DataType=float -->
+                <th>Freespeed</th> <!-- DataType=float -->
+                <th>Capacity</th> <!-- DataType=float -->
+                <th>Perm Lanes</th> <!-- DataType=float -->
+                <th>One Way</th> <!-- DataType=string -->
+                <th>Modes</th> <!-- DataType=string -->
+                <th>From X</th> <!-- DataType=float -->
+                <th>From Y</th> <!-- DataType=float -->
+                <th>To X</th> <!-- DataType=float -->
+                <th>To Y</th> <!-- DataType=float -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in person_data %}
+            <tr>
+                <td>{{ row[0] }}</td> <!-- Person_ID, DataType=string -->
+                <td>{{ row[1] }}</td> <!-- Event_type, DataType=string -->
+                <td>{{ row[2] }}</td> <!-- Link_ID, DataType=string -->
+                <td>{{ row[3] }}</td> <!-- ActType, DataType=string -->
+                <td>{{ row[4] }}</td> <!-- LegMode, DataType=string -->
+                <td>{{ row[5] }}</td> <!-- Timestamp, DataType=datetime -->
+                <td>{{ "%.2f"|format(row[6]) }}</td> <!-- From_Node, DataType=float -->
+                <td>{{ "%.2f"|format(row[7]) }}</td> <!-- To_Node, DataType=float -->
+                <td>{{ "%.2f"|format(row[8]) }}</td> <!-- Length, DataType=float -->
+                <td>{{ "%.2f"|format(row[9]) }}</td> <!-- Freespeed, DataType=float -->
+                <td>{{ "%.2f"|format(row[10]) }}</td> <!-- Capacity, DataType=float -->
+                <td>{{ "%.2f"|format(row[11]) }}</td> <!-- PermLanes, DataType=float -->
+                <td>{{ "%.2f"|format(row[12]) }}</td> <!-- OneWay, DataType=boolean/string -->
+                <td>{{ row[13] }}</td> <!-- Modes, DataType=string -->
+                <td>{{ "%.2f"|format(row[14]) }}</td> <!-- From_X, DataType=float -->
+                <td>{{ "%.2f"|format(row[15]) }}</td> <!-- From_Y, DataType=float -->
+                <td>{{ "%.2f"|format(row[16]) }}</td> <!-- To_X, DataType=float -->
+                <td>{{ "%.2f"|format(row[17]) }}</td> <!-- To_Y, DataType=float -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% if node_data %}
+<div class="data-container">
+    <h2> Link_ID Information </h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Link ID</th> <!-- DataType=string -->
+                <th>Person ID</th> <!-- DataType=string -->
+                <th>Event Type</th> <!-- DataType=string -->
+                <th>Act Type</th> <!-- DataType=string -->
+                <th>Leg Mode</th> <!-- DataType=string -->
+                <th>Timestamp</th> <!-- DataType=datetime -->
+                <th>From Node</th> <!-- DataType=float -->
+                <th>To Node</th> <!-- DataType=float -->
+                <th>Length</th> <!-- DataType=float -->
+                <th>Freespeed</th> <!-- DataType=float -->
+                <th>Capacity</th> <!-- DataType=float -->
+                <th>Perm Lanes</th> <!-- DataType=float -->
+                <th>One Way</th> <!-- DataType=string -->
+                <th>Modes</th> <!-- DataType=string -->
+                <th>From X</th> <!-- DataType=float -->
+                <th>From Y</th> <!-- DataType=float -->
+                <th>To X</th> <!-- DataType=float -->
+                <th>To Y</th> <!-- DataType=float -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in node_data %}
+            <tr>
+                <td>{{ row[2] }}</td> <!-- Link_ID, DataType=string -->
+                <td>{{ row[0] }}</td> <!-- Person_ID, DataType=string -->
+                <td>{{ row[1] }}</td> <!-- Event_type, DataType=string -->
+                <td>{{ row[3] }}</td> <!-- ActType, DataType=string -->
+                <td>{{ row[4] }}</td> <!-- LegMode, DataType=string -->
+                <td>{{ row[5] }}</td> <!-- Timestamp, DataType=datetime -->
+                <td>{{ "%.2f"|format(row[6]) }}</td> <!-- From_Node, DataType=float -->
+                <td>{% if row[7] != None %}{{ "%.2f"|format(row[7]) }}{% else %}N/A{% endif %}</td>
+                <td>{{ "%.2f"|format(row[8]) }}</td> <!-- Length, DataType=float -->
+                <td>{{ "%.2f"|format(row[9]) }}</td> <!-- Freespeed, DataType=float -->
+                <td>{{ "%.2f"|format(row[10]) }}</td> <!-- Capacity, DataType=float -->
+                <td>{{ "%.2f"|format(row[11]) }}</td> <!-- PermLanes, DataType=float -->
+                <td>{{ "%.2f"|format(row[12]) }}</td> <!-- OneWay, DataType=boolean/string -->
+                <td>{{ row[13] }}</td> <!-- Modes, DataType=string -->
+                <td>{{ "%.2f"|format(row[14]) }}</td> <!-- From_X, DataType=float -->
+                <td>{{ "%.2f"|format(row[15]) }}</td> <!-- From_Y, DataType=float -->
+                <td>{{ "%.2f"|format(row[16]) }}</td> <!-- To_X, DataType=float -->
+                <td>{{ "%.2f"|format(row[17]) }}</td> <!-- To_Y, DataType=float -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+<!-- Display Transactions Data -->
+{% if transaction_data %}
+<div class="data-container">
+    <h2>Transactions</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Transaction ID</th> <!-- DataType=string -->
+                <th>Person ID</th> <!-- DataType=string -->
+                <th>Amount</th> <!-- DataType=float -->
+                <th>Purpose</th> <!-- DataType=string -->
+                <th>Event Time</th> <!-- DataType=datetime -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transaction_data %}
+            <tr>
+                <td>{{ transaction[0] }}</td> <!-- Transaction_ID, DataType=string -->
+                <td>{{ transaction[1] }}</td> <!-- Person_ID, DataType=string -->
+                <td>{{ "%.2f"|format(transaction[2]) }}</td> <!-- Amount, DataType=float -->
+                <td>{{ transaction[3] }}</td> <!-- Purpose, DataType=string -->
+                <td>{{ transaction[4] }}</td> <!-- EventTime, DataType=datetime -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>   
+</div>
+{% endif %}
+{% if events %}
+<div class="data-container">
+    <h2> All Events Information </h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th> <!-- DataType=datetime -->
+                <th>Person ID</th> <!-- DataType=string -->
+                <th>Event Type</th> <!-- DataType=string -->
+                <th>Link ID</th> <!-- DataType=string -->
+                <th>Act Type</th> <!-- DataType=string -->
+                <th>Leg Mode</th> <!-- DataType=string -->
+                <th>From Node</th> <!-- DataType=float -->
+                <th>To Node</th> <!-- DataType=float -->
+                <th>Length</th> <!-- DataType=float -->
+                <th>Freespeed</th> <!-- DataType=float -->
+                <th>Capacity</th> <!-- DataType=float -->
+                <th>Perm Lanes</th> <!-- DataType=float -->
+                <th>One Way</th> <!-- DataType=string -->
+                <th>Modes</th> <!-- DataType=string -->
+                <th>From X</th> <!-- DataType=float -->
+                <th>From Y</th> <!-- DataType=float -->
+                <th>To X</th> <!-- DataType=float -->
+                <th>To Y</th> <!-- DataType=float -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in events %}
+            <tr>
+                <td>{{ row[5] }}</td> <!-- Timestamp, DataType=datetime -->
+                <td>{{ row[0] }}</td> <!-- Person_ID, DataType=string -->
+                <td>{{ row[1] }}</td> <!-- Event_type, DataType=string -->
+                <td>{{ row[2] }}</td> <!-- Link_ID, DataType=string -->
+                <td>{{ row[3] }}</td> <!-- ActType, DataType=string -->
+                <td>{{ row[4] }}</td> <!-- LegMode, DataType=string -->
+                <td>{{ "%.2f"|format(row[6]) }}</td> <!-- From_Node, DataType=float -->
+                <td>{% if row[7] != None %}{{ "%.2f"|format(row[7]) }}{% else %}N/A{% endif %}</td>
+                <td>{{ "%.2f"|format(row[8]) }}</td> <!-- Length, DataType=float -->
+                <td>{{ "%.2f"|format(row[9]) }}</td> <!-- Freespeed, DataType=float -->
+                <td>{{ "%.2f"|format(row[10]) }}</td> <!-- Capacity, DataType=float -->
+                <td>{{ "%.2f"|format(row[11]) }}</td> <!-- PermLanes, DataType=float -->
+                <td>{{ "%.2f"|format(row[12]) }}</td> <!-- OneWay, DataType=boolean/string -->
+                <td>{{ row[13] }}</td> <!-- Modes, DataType=string -->
+                <td>{{ "%.2f"|format(row[14]) }}</td> <!-- From_X, DataType=float -->
+                <td>{{ "%.2f"|format(row[15]) }}</td> <!-- From_Y, DataType=float -->
+                <td>{{ "%.2f"|format(row[16]) }}</td> <!-- To_X, DataType=float -->
+                <td>{{ "%.2f"|format(row[17]) }}</td> <!-- To_Y, DataType=float -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+<!-- Error Handeling -->
+{% if search_attempt %}
+    {% if not person_data and request.form.get('personSearch') %}
+    <div class="centered-message" style="color: red;">
+        <strong>Error:</strong> The search came up inconclusive. No data available for the specified person ID.
+    </div>
+    {% endif %}
+
+    {% if not node_data and request.form.get('linkSearch') %}
+    <div class="centered-message" style="color: red;">
+        <strong>Error:</strong> The search came up inconclusive. No data available for the specified link ID.
+    </div>
+    {% endif %}
+{% endif %}
+
+</body>
+</html>

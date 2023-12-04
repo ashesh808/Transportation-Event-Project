@@ -152,31 +152,35 @@
  
     </script>
     <div class="search-container">
-      <form id="personSearchForm" action="/search/person" method="post" class="search-group">
-          <input type="text" class="search-input" placeholder="Enter Person ID" name="personSearch">
-          <button type="submit" class="search-btn">Search by Person ID</button>
-      </form>
-      
-      <form id="linkSearchForm" action="/search/link" method="post" class="search-group">
-          <input type="text" class="search-input" placeholder="Enter Link ID" name="linkSearch">
-          <button type="submit" class="search-btn">Search by Link ID</button>
-      </form>
-  
-      <!-- This is the form for event search -->
-      <form id="eventSearchForm" action="/all/events" method="post" class="event-search-container">
-          <!-- New div for flexbox alignment -->
-          <div class="time-inputs">
-              <input type="number" step="0.1" id="start_time" name="start_time" class="search-input time-input" placeholder="Start Time" min="0" max="999999.9">
-              <input type="number" step="0.1" id="end_time" name="end_time" class="search-input time-input" placeholder="End Time" min="0" max="999999.9">
-          </div>
-          <!-- Button below the time inputs -->
-          <input type="submit" value="Get Events" class="search-btn get-events-btn">
-          <!-- Error message display -->
-          {% if error_message %}
-              <p class="error-message">{{ error_message }}</p>
-          {% endif %}
-      </form>                                  
-  </div>
+        <!-- Form for Person ID search -->
+        <form id="personSearchForm" action="/search/person" method="post" class="search-group">
+            <input type="text" class="search-input" placeholder="Enter Person ID" name="personSearch">
+            <button type="submit" class="search-btn">Search by Person ID</button>
+        </form>
+        
+        <!-- Form for Link ID search -->
+        <form id="linkSearchForm" action="/search/link" method="post" class="search-group">
+            <input type="text" class="search-input" placeholder="Enter Link ID" name="linkSearch">
+            <button type="submit" class="search-btn">Search by Link ID</button>
+        </form>
+    
+        <!-- Form for event search by time range and link ID -->
+        <form id="eventSearchForm" action="/all/events" method="post" class="event-search-container">
+            <!-- Time inputs -->
+            <div class="time-inputs">
+                <input type="text" id="start_time" name="start_time" class="search-input time-input" placeholder="Start Time (HH:MM:SS)" pattern="^\d{1,2}:\d{2}:\d{2}$" title="Enter time in HH:MM:SS format" required>
+                <input type="text" id="end_time" name="end_time" class="search-input time-input" placeholder="End Time (HH:MM:SS)" pattern="^\d{1,2}:\d{2}:\d{2}$" title="Enter time in HH:MM:SS format" required>
+            </div>
+            <!-- Link ID input -->
+            <input type="text" id="link_id" name="link_id" class="search-input" placeholder="Enter Link ID" required>
+            <!-- Submit button -->
+            <input type="submit" value="Get Events" class="search-btn get-events-btn">
+            <!-- Error message display -->
+            {% if error_message %}
+                <p class="error-message">{{ error_message }}</p>
+            {% endif %}
+        </form>
+    </div>    
                
 <!-- Display data section -->
 {% if person_data %}
@@ -366,20 +370,22 @@
     </table>
 </div>
 {% endif %}
-<!-- Error Handeling -->
-{% if search_attempt %}
-    {% if not person_data and request.form.get('personSearch') %}
-    <div class="centered-message" style="color: red;">
-        <strong>Error:</strong> The search came up inconclusive. No data available for the specified person ID.
-    </div>
-    {% endif %}
+    <!-- Handling errors for search attempts -->
+    {% if search_attempt %}
+        <!-- Displaying error message if no data found for person ID -->
+        {% if not person_data and request.form.get('personSearch') %}
+        <div class="centered-message" style="color: red;">
+            <strong>Error:</strong> The search came up inconclusive. No data available for the specified person ID.
+        </div>
+        {% endif %}
 
-    {% if not node_data and request.form.get('linkSearch') %}
-    <div class="centered-message" style="color: red;">
-        <strong>Error:</strong> The search came up inconclusive. No data available for the specified link ID.
-    </div>
+        <!-- Displaying error message if no data found for link ID -->
+        {% if not node_data and request.form.get('linkSearch') %}
+        <div class="centered-message" style="color: red;">
+            <strong>Error:</strong> The search came up inconclusive. No data available for the specified link ID.
+        </div>
+        {% endif %}
     {% endif %}
-{% endif %}
 
 </body>
 </html>

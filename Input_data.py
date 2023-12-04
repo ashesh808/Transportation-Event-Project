@@ -1,11 +1,11 @@
 import sqlite3
 import xml.etree.ElementTree as ET
 
-# Set up SQLite database and tables
+# Connect to a SQLite database called 'Project.db'. If it doesn't exist, it will be created.
 conn = sqlite3.connect('Project.db')
 cursor = conn.cursor()
 
-# Define the schema based on the ER diagram
+# Create some tables in the database to store different types of data.
 cursor.executescript('''
 CREATE TABLE IF NOT EXISTS Nodes (
     ID TEXT PRIMARY KEY,
@@ -55,35 +55,35 @@ CREATE TABLE IF NOT EXISTS Events (
 );
 ''')
 
-# Parse network.xml to populate Nodes and Links
+# Read data from an XML file named 'network.xml' to put into our Nodes and Links tables.
 tree = ET.parse('network.xml')
 root = tree.getroot()
 
-# Inserting nodes data
+# Go through each node in the XML and add its details to the Nodes table.
 for node in root.findall('nodes/node'):
     cursor.execute('INSERT INTO Nodes (ID, X, Y) VALUES (?, ?, ?)', 
                    (node.attrib['id'], node.attrib['x'], node.attrib['y']))
 
-# Inserting links data
+# Go through each link in the XML and add its details to the Links table.
 for link in root.findall('links/link'):
     cursor.execute('INSERT INTO Links (Link_ID, "From", "To", Length, Freespeed, Capacity, PermLanes, OneWay, Modes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
                    (link.attrib['id'], link.attrib['from'], link.attrib['to'], link.attrib['length'], link.attrib['freespeed'], link.attrib['capacity'], link.attrib['permlanes'], link.attrib['oneway'], link.attrib['modes']))
 
-# Counter for transaction IDs
+# Set up a counter for creating unique transaction IDs.
 i = 1
 
-# Now, let's parse output_events.xml to populate Person, Transactions, and Events
+# Read data from another XML file named 'output_events.xml' to put into Person, Transactions, and Events tables.
 tree_events = ET.parse('output_events.xml')
 root_events = tree_events.getroot()
 
-# Inserting person data
+# Go through each 'actstart' event and add person details to the Person table.
 for person in root_events.findall('.//event[@type="actstart"]'):
     person_id = person.get('person', '')
     if person_id:
         cursor.execute('INSERT OR IGNORE INTO Person (person_ID) VALUES (?)', 
                        (person_id,))
 
-# Inserting events data
+# Go through each event and add its details to the Events table.
 for event in root_events.findall('.//event'):
     event_type = event.get('type', '')
     person_id = event.get('person', None)
@@ -95,7 +95,7 @@ for event in root_events.findall('.//event'):
     cursor.execute('INSERT INTO Events (Event_type, Person_ID, Link_ID, actType, Leg_Mode, Timestamp) VALUES (?, ?, ?, ?, ?, ?)', 
                    (event_type, person_id, link_id, act_type, leg_mode, timestamp))
     
-    # If the event is a transaction event
+    # Check if the event is a transaction (like a taxi interaction) and then add it to the Transactions table.
     if event_type in ['taxi interaction', 'Uber transaction']:
         transaction_id = "txn_" + str(i)
         i += 1
@@ -103,12 +103,11 @@ for event in root_events.findall('.//event'):
         amount = event.get('amount', None)
         purpose = event.get('purpose', None)
         event_time = event.get('time', None)
-        # Assuming the XML contains the transaction date (adjust accordingly if not)
-        transaction_date = event.get('date', None)  
+        transaction_date = event.get('date', None)  # The date might be in the XML.
         
         cursor.execute('INSERT INTO Transactions (transaction_ID, person_ID, transactionPartner, amount, purpose, eventTime, transactionDate) VALUES (?, ?, ?, ?, ?, ?, ?)', 
                        (transaction_id, person_id, transaction_partner, amount, purpose, event_time, transaction_date))
 
-# Commit changes and close the connection
+# Save all the changes we made to the database and then close the connection to it.
 conn.commit()
 conn.close()
